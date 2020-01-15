@@ -9,10 +9,10 @@ import argparse
 import os
 import re
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--input", help="this is input file directory")
+parser.add_argument("-i", "--input", help="this is input file directory where files are .fq")
 parser.add_argument("-o", "--outputfile", help="this is the name of the output file")
 inputarguments = parser.parse_args()
-if inputarguments.input1:
+if inputarguments.input:
 	file_directory = inputarguments.input
 else:
 	print("error, file directory needed")
@@ -23,5 +23,11 @@ else:
 	print("error, output file needed")
 
 
-#def quality_control(sequence):
-	
+def quality_control(file_directory):
+	i = 1
+	for filename in os.listdir(file_directory):
+		myfile = file_directory + '/' + filename
+		print("files beingp processed:" + filename)
+		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java"])
+
+quality_control(file_directory)	
