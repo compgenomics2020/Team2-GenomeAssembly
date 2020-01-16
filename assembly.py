@@ -28,6 +28,6 @@ def quality_control(file_directory):
 	for filename in os.listdir(file_directory):
 		myfile = file_directory + '/' + filename
 		print("files beingp processed:" + filename)
-		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java"])
+		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "./fastqc_output", "-t", "6"])
 
 quality_control(file_directory)	
