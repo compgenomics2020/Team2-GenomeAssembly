@@ -23,11 +23,27 @@ else:
 	print("error, output file needed")
 
 
-def quality_control(file_directory):
+
+def quality_control(file_directory):	#Function utlizing fastqc and trimmomatic 
 	i = 1
+	file_list = []
 	for filename in os.listdir(file_directory):
-		myfile = file_directory + '/' + filename
+		myfile = file_directory + '/' + filename	#calls unzipped .fq files
+		if "h" not in filename:
+			listname = "./fastqc_output/" + filename[:-3] + "_fastqc.zip"
+			file_list.append(listname)
 		print("files beingp processed:" + filename)
-		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "./fastqc_output", "-t", "6"])
+		#subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "./fastqc_output", "-t", "6"])	#performs fastqc
+	
+	for file in file_list:
+		if "_fastqc.zip" in file:
+			#subprocess.call(["unzip", file])	#unzips all generated files
+			with open("all_fastq_files.txt",'a') as myfi:
+				myfi.write("./" + file[16:-4] + "/fastqc_data.txt" + '\n') 	#creates a file with the names of all the new unzipped folders and path to fastqc_data.txt for them
+			i += 1
+#def trimmomatic(fastqc_output):
+#	with open("./all_fastq_files.txt", 'r') as myfi:
+#		for line in myfi:
+#			subprocess.call(["cd ~", "java", "-jar", "../projects/group-b/genome-assembly/Trimmomatic-0.39/trimmomatic-0.39.jar", "PE"
 
 quality_control(file_directory)	
