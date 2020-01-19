@@ -29,21 +29,91 @@ def quality_control(file_directory):	#Function utlizing fastqc and trimmomatic
 	file_list = []
 	for filename in os.listdir(file_directory):
 		myfile = file_directory + '/' + filename	#calls unzipped .fq files
-		if "h" not in filename:
+		if "html" not in filename:
 			listname = "./fastqc_output/" + filename[:-3] + "_fastqc.zip"
 			file_list.append(listname)
 		print("files beingp processed:" + filename)
-		#subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "./fastqc_output", "-t", "6"])	#performs fastqc
-	
-	for file in file_list:
+		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "./fastqc_output", "-t", "12", "--extract"])	#performs fastqc
+	file_list_sort = sorted(file_list)
+	#print(file_list)
+	for file in file_list_sort:
 		if "_fastqc.zip" in file:
-			#subprocess.call(["unzip", file])	#unzips all generated files
-			with open("all_fastq_files.txt",'a') as myfi:
-				myfi.write("./" + file[16:-4] + "/fastqc_data.txt" + '\n') 	#creates a file with the names of all the new unzipped folders and path to fastqc_data.txt for them
-			i += 1
-#def trimmomatic(fastqc_output):
-#	with open("./all_fastq_files.txt", 'r') as myfi:
-#		for line in myfi:
-#			subprocess.call(["cd ~", "java", "-jar", "../projects/group-b/genome-assembly/Trimmomatic-0.39/trimmomatic-0.39.jar", "PE"
+			subprocess.call(["unzip", file, "-d", "./unzipped_fastqc_files/"])	#unzips all generated files
+			with open("all_fastq_files_data.txt",'a') as myfi:
+				if "_1_" in file:
+					myfi.write("./unzipped_fastqc_files/" + file[16:-4] + "/fastqc_data.txt" + '\t') 	#creates a file with the names of all the new unzipped folders and path to fastqc_data.txt for them paired for forward and reverse reads
+				elif "_2_" in file:
+					myfi.write("./unzipped_fastqc_files/" + file[16:-4] + "/fastqc_data.txt" + '\n') 
+			with open("all_fastq_files_paired.txt",'a') as myfi:
+				if "_1_" in file:
+					myfi.write("./gunzipped_data/" + file[16:-11] + ".fq" + '\t') 	#creates a file with the names of all the original unzipped fastq filaes paired for forward and reverse reads
+				elif "_2_" in file:
+					myfi.write("./gunzipped_data/" + file[16:-11] + ".fq" + '\n') 
 
-quality_control(file_directory)	
+			i += 1
+forward_score_library = {}
+reverse_score_library = {}
+def find_cropping_and_trim(file):
+	quality_scores_reached = False
+	with open(file, 'r') as data_files:
+		sequence_pair = -1
+		for line in data_files:
+			crop = False
+			headcrop = False
+			sequence_pair += 1	
+			forward_read_report = line.split()[0]
+			reverse_read_report = line.split()[1]
+			with open(forward_read_report, 'r') as data:
+				forward_score_library = {}
+				for line in data:
+					if ">>Per base sequence quality" in line:
+						quality_scores_reached = True
+						#print("quality scores reached")
+					elif ">>END_MODULE" in line and quality_scores_reached:
+						quality_scores_reached = False
+						break
+					elif quality_scores_reached and "#Base" not in line:
+						myline = line.split()
+						
+						#print(myline[0])
+						if float(myline[1])-5 < 25:
+							crop = True
+							forward_score_library[myline[0]] = myline[1]
+							#print(myline[0])
+							if "-" in myline[0]:
+								crop_command = str(myline[0].split("-")[1])
+							else:
+								crop_command = str(myline[0])
+
+			with open(reverse_read_report, 'r') as data:
+				reverse_score_library = {}
+				for line in data:
+					if ">>Per base sequence quality" in line:
+						quality_scores_reached = True
+						
+					elif ">>END_MODULE" in line and quality_scores_reached:
+						quality_scores_reached = False
+					elif quality_scores_reached and "#Base" not in line:
+						myline = line.split()
+						
+						if float(myline[1])-5 < 25:
+							crop = True
+							if "-" in myline[0]:
+								headcrop_command = str(myline[0].split("-")[1])
+							else:
+								headcrop_command = str(myline[0])
+
+			#print(forward_score_library, reverse_score_library)
+			with open("all_fastq_files_paired.txt", 'r') as trimming_input:
+				trimming_pair = trimming_input.readlines()[sequence_pair].split()
+				fastqc_file_1 = trimming_pair[0]
+				fastqc_file_2 = trimming_pair[1]
+				#print(fastq_file_1, fastq_file_2)
+				#print(headcrop_command)
+				output_name = fastqc_file_1[16:-5]	
+				subprocess.call(["./jdk8u232-b09/bin/java", "-jar", "./Trimmomatic-0.39/trimmomatic-0.39.jar", "PE", "-threads", "12", "-phred33", fastqc_file_1, fastqc_file_2, "-baseout", output_name, "CROP:", crop_command, "HEADCROP:", headcrop_command, "-trimlog", "trim.log", "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:30", "MINLEN:45"])
+				crop_command = 0
+				headcrop_command = 0
+
+#quality_control(file_directory)
+find_cropping_and_trim("all_fastq_files_data.txt")	
