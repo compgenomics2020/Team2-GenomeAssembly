@@ -9,4 +9,5 @@ java was then exported to the PATH
 
 2. FastQC was downloaded using wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.9.zip and then subsequently unzipped. Permissions were then changed for the fastqc script using chmod 755 FastQC/fastqc.
 
-3. Trimmomoatic Binary was downloaded using wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.39.zip and subsequently unzipped
+3. Fastp Binary was downloaded using wget http://opengene.org/fastp/fastp
+chmod a+x ./fastp
