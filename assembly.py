@@ -24,7 +24,7 @@ else:
 
 
 
-def quality_control(file_directory):	#Function utlizing fastqc and trimmomatic 
+def quality_control(file_directory):	#Function utlizing fastqc and fastp 
 	i = 1
 	file_list = []
 	for filename in os.listdir(file_directory):
@@ -57,7 +57,7 @@ def find_cropping_and_trim(file):
 	quality_scores_reached = False
 	with open(file, 'r') as data_files:
 		sequence_pair = -1
-		for line in data_files:
+		for line in data_files:		#refers to the paths to each data report for the pre-trim QC
 			crop = False
 			headcrop = False
 			sequence_pair += 1	
@@ -74,7 +74,7 @@ def find_cropping_and_trim(file):
 						break
 					elif quality_scores_reached and "#Base" not in line:
 						myline = line.split()
-						
+# Makes two dictionaries of each position-qc score pair						
 						#print(myline[0])
 						if float(myline[1])-5 < 25:
 							crop = True
@@ -103,17 +103,20 @@ def find_cropping_and_trim(file):
 							else:
 								headcrop_command = str(myline[0])
 
-			#print(forward_score_library, reverse_score_library)
+# Now, original fastq files are called in pairs to be trimmed by fastp
 			with open("all_fastq_files_paired.txt", 'r') as trimming_input:
 				trimming_pair = trimming_input.readlines()[sequence_pair].split()
 				fastqc_file_1 = trimming_pair[0]
 				fastqc_file_2 = trimming_pair[1]
-				#print(fastq_file_1, fastq_file_2)
-				#print(headcrop_command)
-				output_name = fastqc_file_1[16:-5]	
-				subprocess.call(["./jdk8u232-b09/bin/java", "-jar", "./Trimmomatic-0.39/trimmomatic-0.39.jar", "PE", "-threads", "12", "-phred33", fastqc_file_1, fastqc_file_2, "-baseout", output_name, "CROP:", crop_command, "HEADCROP:", headcrop_command, "-trimlog", "trim.log", "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:30", "MINLEN:45"])
-				crop_command = 0
-				headcrop_command = 0
+				output_name = './trim_output/' + fastqc_file_1[16:-5] + "output_1.fastq"
+				output_name_2 = './trim_output/' + fastqc_file_2[16:-5] + "output_2.fastq"
+				fail_file = output_name + "fail"
+				merged_file = output_name + "merge"
+				output_name_json = './trim_output/' + fastqc_file_1[16:-5] + ".json"
+				output_name_html = './trim_output/' + fastqc_file_1[16:-5] + ".html"
+				quality = "25"
+				subprocess.call(["./fastp", "--in1", fastqc_file_1, "--in2", fastqc_file_2, "--stdout", "--out1", output_name, "--out2", output_name_2, "--failed_out", fail_file, "-m", "--merged_out", merged_file, "-l", "50", "-q", quality, "-j", output_name_json, "-h", output_name_html, '-w', '10'])
+				
 
 #quality_control(file_directory)
 find_cropping_and_trim("all_fastq_files_data.txt")	
