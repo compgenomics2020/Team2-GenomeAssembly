@@ -19,6 +19,7 @@ Output:	-	The final output is going to be Genome Assembly contigs for respective
 
 import argparse
 import subprocess
+import os
 
 #############################Globals#############################
 
@@ -34,11 +35,64 @@ def check_tools():
 	'''
 	for tool_name in genome_assembly_tools['in_path_variable']:
 		try:
+			#Calling the tool by name supplied.
 			bash_output = subprocess.check_output([tool_name])
 		except (FileNotFoundError, subprocess.CalledProcessError) as error:
 			print("A tool: {}, was not present on the system. Now quitting...".format(tool_name))
 			return False
 
+	for tool_path in genome_assembly_tools['direct_paths']:
+		try:
+			#Calling the tool by name supplied.
+			bash_output = subprocess.check_output([tool_path])
+		except (FileNotFoundError, subprocess.CalledProcessError) as error:
+			print("A tool with path: {}, was not present on the system. Now quitting...".format(tool_name))
+			return False		
+
+	#All is fine.
+	return True
+
+
+def process_input_directory(input_directory_path):
+	'''
+	Get an idea of what fastq files look like.
+	The logic assumes files to be written as: CGT2049_1.fq, CGT2049_2.fq or CGT2049_1.fq.gz, ...
+	'''
+	#####################Please make sure that all files have a similar naming scheme.#####################
+
+	files = os.listdir(input_directory_path)
+	
+	#Check if directory is empty.
+	if len(files) == 0:
+		print("No files present in the directory.")
+		return False, "No files present in the directory."
+
+	#Check if at least one fastq file is present.
+	fastq_files = [file_name for file_name in files if 'fastq' or 'fq' in file_name.split('.')[-2:]]
+	
+	#See if they are paired or single. Seperate paired from single as well.
+	#This dict looks like: {'CGT2049_1.fq':	'CGT2049_2.fq'}
+
+	fastq_files_dict = {}
+
+	#The for loop below creates the above dict.
+	for file_name in fastq_files:
+		#Get the prefix name of file.
+		file_prefix_name = file_name.split('.')[0].split('_')[0]
+		if file_prefix_name in [i.split('.')[0].split('_')[0] for i in list(fastq_files_dict.keys())]:
+			for fastq_file_one in list(fastq_files_dict.keys()):
+				if fastq_file_one.split('.')[0].split('_')[0] == file_prefix_name:
+					fastq_files_dict[fastq_file_one] = file_name
+		else:
+			fastq_files_dict[file_name] = None
+
+	if None not in (fastq_files_dict.values()):
+		#All reads are paired.
+		return True, ['paired', fastq_files_dict]
+
+	else:
+		#One or more reads are Single-pair.
+		return True, ['single', fastq_files_dict]
 
 
 
@@ -55,6 +109,9 @@ def main():
 	input_directory_path_for_fastq_files = args['input_directory']
 	output_directory_path = args['output_directory']
 
+	#Check if directories exist.
+	if not os.path.exists(input_directory_path_for_fastq_files) and	not os.path.exists(output_directory_path):
+		return False, "Input and Output directories do not exist."
 
 	#Check if all the tools are present. Either the tool should be present in the PATH variable 
 	#or the bioinformatician should make sure that a proper path to their tool is sent.
@@ -64,7 +121,15 @@ def main():
 	if not check_tools_output:
 		return False, "Tools asked for by the Genome Assembly weren't present on the system."
 
+	#Checks completed. Parse through input directories to see how fastq files are doing.
+	status_process_input_directory, return_output_process_input_directory = process_input_directory(input_directory_path_for_fastq_files)
 
+	if not status_process_input_directory:
+		return False, return_output_process_input_directory
+
+	fastq_files_dict = return_output_process_input_directory[1]
+	
+	#Passing data over to Genome Assemblies.
 
 
 if __name__ == "__main__":
@@ -72,62 +137,6 @@ if __name__ == "__main__":
 	For Unit testing the functionality of Genome Assembly group.
 	Always make sure that this script is working intact when called specifically.
 	'''
-	main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	status = main()
+	print(status)
 
