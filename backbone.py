@@ -18,14 +18,20 @@ Output:	-	The final output is going to be Genome Assembly contigs for respective
 '''
 
 import argparse
-import subprocess
+import multiprocessing
 import os
+import subprocess
+
+from spades_wrapper import spades_runner
+
 
 #############################Globals#############################
 
 #Please do not change or add keys in the following dictionary.
 #Please do not use direct_paths unless you have to.
 genome_assembly_tools = {'in_path_variable': ['spades.py'], 'direct_paths': []}
+number_of_assembly_tools = 3
+
 
 
 def check_tools():
@@ -95,6 +101,48 @@ def process_input_directory(input_directory_path):
 		return True, ['single', fastq_files_dict]
 
 
+def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict):
+	'''
+	We'll call 3 assembly tools, parallely
+	'''
+	parallel_manager = multiprocessing.Manager()
+	status_returned = parallel_manager.dict()
+
+	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
+	for fastq_file_forward, fastq_file_reverse in fastq_files_dict.items():
+		#Check if foward has an _1 as a suffix.
+		if '_1' in fastq_file_forward:
+			
+			##################SPAdes##################
+			#Create directory for SPAdes' results.
+			output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades'
+			if not os.path.exists(output_spades_path):
+				os.mkdir(output_spades_path)
+
+			spades_output = spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_spades_path) 
+
+			#Check if SPAdes ran fine.
+			if spades_output is not True:
+				print("SPAdes process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
+
+			
+			##################Unicycler##################
+
+
+
+			##################ABySS##################
+
+
+
+			##################Velvet##################
+
+
+
+
+	return True
+
+
+
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -116,9 +164,9 @@ def main():
 	#Check if all the tools are present. Either the tool should be present in the PATH variable 
 	#or the bioinformatician should make sure that a proper path to their tool is sent.
 	#Pipeline cannot work without tools.
-	check_tools_output = check_tools()
+	status_check_tools = check_tools()
 
-	if not check_tools_output:
+	if not status_check_tools:
 		return False, "Tools asked for by the Genome Assembly weren't present on the system."
 
 	#Checks completed. Parse through input directories to see how fastq files are doing.
@@ -129,8 +177,21 @@ def main():
 
 	fastq_files_dict = return_output_process_input_directory[1]
 	
-	#Passing data over to Genome Assemblies.
+	#################Quality Checks#################
+	#Kristine
 
+
+
+	#################Passing data over to Genome Assembly Tools#################
+	status_run_assemblies = run_assemblies(input_directory_path_for_fastq_files, output_directory_path, fastq_files_dict)
+
+
+
+	#################Post Assembly Quality Check#################
+	#Quast
+
+
+	
 
 if __name__ == "__main__":
 	'''
