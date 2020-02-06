@@ -43,8 +43,8 @@ def velvet_runner(fastq_file_forward, fastq_file_reverse, kmer, input_directory_
 		if not os.path.exists(assem_path):
 			os.mkdir(assem_path)
 
-		#velveth_output = subprocess.check_output(["velveth", assem_path, str(kmer), "-shortPaired", "-fastq", "-separate", fastq_file_forward_path, fastq_file_reverse_path, '-short2', '-fastq', output_subdir_path + '/' + output_subdir_name + "_unpaired.fq"])
-		#velvetg_output = subprocess.check_output(["velvetg", assem_path, "-min_contig_lgth", "500"])
+		velveth_output = subprocess.check_output(["velveth", assem_path, str(kmer), "-shortPaired", "-fastq", "-separate", fastq_file_forward_path, fastq_file_reverse_path, '-short2', '-fastq', output_subdir_path + '/' + output_subdir_name + "_unpaired.fq"])
+		velvetg_output = subprocess.check_output(["velvetg", assem_path, "-min_contig_lgth", "500"])
 
 		#Delete the concatenated file.
 		delete_cat_file = subprocess.check_output(["rm", output_subdir_path + '/' + output_subdir_name + "_unpaired.fq"])
