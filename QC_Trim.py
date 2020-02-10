@@ -10,7 +10,6 @@ import os
 import re
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", help="this is input file directory where files are .fq")
-#parser.add_argument("-o", "--outputfile", help="this is the name of the output file")
 inputarguments = parser.parse_args()
 if inputarguments.input:
 	file_directory = inputarguments.input
@@ -48,7 +47,7 @@ def quality_control(file_directory):	#Function utlizing fastqc and fastp
 			i += 1
 forward_score_list = []
 reverse_score_list = []
-def find_cropping_and_trim(file, qual="30"):
+def find_cropping_and_trim(file, qual="30"):	#iterates through each QC data report to identify front and back cropping values
 	quality_scores_reached = False
 	with open(file, 'r') as data_files:
 		sequence_pair = -1
@@ -63,7 +62,7 @@ def find_cropping_and_trim(file, qual="30"):
 				reverse_score_list = []
 				length = 0
 				for line in data:
-					if ">>Per base sequence quality" in line:
+					if ">>Per base sequence quality" in line:	#Finds section of text file with per base sequence quality
 						quality_scores_reached = True
 						#print("quality scores reached")
 					elif ">>END_MODULE" in line and quality_scores_reached:
@@ -75,7 +74,7 @@ def find_cropping_and_trim(file, qual="30"):
 						#print(myline[0])
 						if "-" in myline[0]:
 
-							if int((myline[0].split("-")[1])) > length:
+							if int((myline[0].split("-")[1])) > length:		#Ensures that if a range is given, only highest number is chosen
 								length = int((myline[0].split("-")[1]))
 						else:
 							length = myline[0]
@@ -89,7 +88,7 @@ def find_cropping_and_trim(file, qual="30"):
 							else:
 								crop_command = str(myline[0])
 								forward_score_list.append(crop_command)
-			with open(reverse_read_report, 'r') as data:
+			with open(reverse_read_report, 'r') as data:	#Repeats for the reverse read
 				reverse_score_library = {}
 				for line in data:
 					if ">>Per base sequence quality" in line:
@@ -115,12 +114,12 @@ def find_cropping_and_trim(file, qual="30"):
 				trimming_pair = trimming_input.readlines()[sequence_pair].split()
 				fastqc_file_1 = trimming_pair[0]
 				fastqc_file_2 = trimming_pair[1]
-				output_name = './test_trim_output/' + fastqc_file_1[16:-5] + "output_1.fastq"
-				output_name_2 = './test_trim_output/' + fastqc_file_2[16:-5] + "output_2.fastq"
+				output_name = './final_trim_output/' + fastqc_file_1[16:-5] + "output_1.fastq"
+				output_name_2 = './final_trim_output/' + fastqc_file_2[16:-5] + "output_2.fastq"
 				fail_file = output_name + "fail"
 				merged_file = output_name + "merge"
-				output_name_json = './test_trim_output/' + fastqc_file_1[16:-5] + "fastp.json"
-				output_name_html = './test_trim_output/' + fastqc_file_1[16:-5] + ".html"
+				output_name_json = './final_trim_output/' + fastqc_file_1[16:-5] + "fastp.json"
+				output_name_html = './final_trim_output/' + fastqc_file_1[16:-5] + ".html"
 				quality = str(qual)
 				halfway_point = int(length) / 2
 				#print(halfway_point)
@@ -133,7 +132,9 @@ def find_cropping_and_trim(file, qual="30"):
 				#print(forward_score_list, reverse_score_list)
 				#print("headcrop position: " + head_command + " tail crop position: " + tail_command)
 				subprocess.call(["./fastp", "--in1", fastqc_file_1, "--in2", fastqc_file_2, "--stdout", "--out1", output_name, "--out2", output_name_2, "--failed_out", fail_file, "-m", "--merged_out", merged_file, "-l", "75", "-q", quality, "-e", "28", "-j", output_name_json, "-h", output_name_html, '-w', '5', '-f', head_command, "-t", tail_command, "-5", "-3", "-M", "28"])
+				subprocess.call(["rm", "all_fastq_files_data.txt"])
+				subprocess.call(["rm", "all_fastq_files_paired.txt"])
 				
 
-#quality_control(file_directory)
+quality_control(file_directory)
 find_cropping_and_trim("all_fastq_files_data.txt")	
