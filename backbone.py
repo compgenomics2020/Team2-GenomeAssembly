@@ -23,6 +23,7 @@ import os
 import subprocess
 
 from spades_wrapper import spades_runner
+from velvet_wrapper import velvet_runner
 
 
 #############################Globals#############################
@@ -30,6 +31,11 @@ from spades_wrapper import spades_runner
 #Please do not change or add keys in the following dictionary.
 #Please do not use direct_paths unless you have to.
 genome_assembly_tools = {'in_path_variable': ['spades.py'], 'direct_paths': []}
+
+#Variable values as desired by other members.
+velvet_kmer_count = 91
+
+
 number_of_assembly_tools = 3
 
 
@@ -84,13 +90,12 @@ def process_input_directory(input_directory_path):
 	#The for loop below creates the above dict.
 	for file_name in fastq_files:
 		#Get the prefix name of file.
-		file_prefix_name = file_name.split('.')[0].split('_')[0]
-		if file_prefix_name in [i.split('.')[0].split('_')[0] for i in list(fastq_files_dict.keys())]:
-			for fastq_file_one in list(fastq_files_dict.keys()):
-				if fastq_file_one.split('.')[0].split('_')[0] == file_prefix_name:
-					fastq_files_dict[fastq_file_one] = file_name
-		else:
+		if '_1' in file_name or '_2' not in file_name:
 			fastq_files_dict[file_name] = None
+
+	for file_name_1 in list(fastq_files_dict.keys()):
+		if file_name_1.replace('_1', '_2') in files:
+			fastq_files_dict[file_name_1] = file_name_1.replace('_1', '_2')
 
 	if None not in (fastq_files_dict.values()):
 		#All reads are paired.
@@ -108,22 +113,35 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 	parallel_manager = multiprocessing.Manager()
 	status_returned = parallel_manager.dict()
 
+	#Assembly flags, put these to default if you want to NOT RUN a particular tool.
+	if_spades = False
+	if_velvet = True
+	if_abyss = False
+
+	#Output directory paths.
+	output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades'
+	output_velvet_path = output_directory_path.rstrip('/') + '/' + 'velvet'
+	output_abyss_path = output_directory_path.rstrip('/') + '/' + 'abyss'
+
 	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
 	for fastq_file_forward, fastq_file_reverse in fastq_files_dict.items():
 		#Check if foward has an _1 as a suffix.
 		if '_1' in fastq_file_forward:
-			
 			##################SPAdes##################
-			#Create directory for SPAdes' results.
-			output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades'
-			if not os.path.exists(output_spades_path):
-				os.mkdir(output_spades_path)
+			if if_spades:
+				#Create directory for SPAdes' results.			
+				if not os.path.exists(output_spades_path):
+					os.mkdir(output_spades_path)
 
-			spades_output = spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_spades_path) 
+				else:
+					#print("Running SPAdes for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
+					spades_output = spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_spades_path) 
 
-			#Check if SPAdes ran fine.
-			if spades_output is not True:
-				print("SPAdes process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
+					#Check if SPAdes ran fine.
+					if spades_output is not True or None:
+						print("SPAdes process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
+
+			##########################################
 
 			
 			##################Unicycler##################
@@ -133,11 +151,20 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 			##################ABySS##################
 
 
-
 			##################Velvet##################
+			if if_velvet:
+				#Create directory for Velvets' results.			
+				if not os.path.exists(output_velvet_path):
+					os.mkdir(output_velvet_path)
+				
+				#print("Running Velvet for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
+				velvet_output = velvet_runner(fastq_file_forward, fastq_file_reverse, velvet_kmer_count, input_directory_path, output_velvet_path)
 
+				#Check if SPAdes ran fine.
+				if velvet_output is not True or None:
+					print("Velvet process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
 
-
+			##########################################
 
 	return True
 
@@ -149,13 +176,15 @@ def main():
 
 	#Arguments added for an input-directory and output-directory.
 	parser.add_argument("-i", "--input-directory", help="Path to a directory that contains input fastq files.", required=True)
-	parser.add_argument("-o", "--output-directory", help="Path to a directory that will store the output files.", required=True)	
+	parser.add_argument("-o", "--output-directory", help="Path to a directory that will store the output files.", required=True)
+	parser.add_argument("-r", "--replace-output-files", help="Replace the output files that are already present. Currently not supported.", required=False, action="store_true")	
 
 	#Parsing the arguments.
 	args = vars(parser.parse_args())
 
 	input_directory_path_for_fastq_files = args['input_directory']
 	output_directory_path = args['output_directory']
+	replace_files_flag = args['replace_output_files']
 
 	#Check if directories exist.
 	if not os.path.exists(input_directory_path_for_fastq_files) and	not os.path.exists(output_directory_path):
@@ -177,16 +206,20 @@ def main():
 
 	fastq_files_dict = return_output_process_input_directory[1]
 	
+	print("Found {} file pairs in the input directory.\n".format(len(fastq_files_dict)))
 	#################Quality Checks#################
+	print("Started pre-assembly quality check.")
+
 	#Kristine
 
-
+	print("Completed quality check.\n")
 
 	#################Passing data over to Genome Assembly Tools#################
+	print("Now running genome assembly tools.")
 	status_run_assemblies = run_assemblies(input_directory_path_for_fastq_files, output_directory_path, fastq_files_dict)
 
 
-
+	print("Completed genome assembly tools.\n")
 	#################Post Assembly Quality Check#################
 	#Quast
 
