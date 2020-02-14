@@ -24,6 +24,7 @@ import subprocess
 
 from spades_wrapper import spades_runner
 from velvet_wrapper import velvet_runner
+from masurca_wrapper import masurca_runner
 
 
 #############################Globals#############################
@@ -35,10 +36,7 @@ genome_assembly_tools = {'in_path_variable': ['spades.py'], 'direct_paths': []}
 #Variable values as desired by other members.
 velvet_kmer_count = 91
 
-
-number_of_assembly_tools = 3
-
-
+default_kmer_values = {'abyss': None, 'spades': None, 'masurca': None, 'unicycler': None, 'velvet': 91}
 
 def check_tools():
 	'''
@@ -80,7 +78,7 @@ def process_input_directory(input_directory_path):
 		return False, "No files present in the directory."
 
 	#Check if at least one fastq file is present.
-	fastq_files = [file_name for file_name in files if 'fastq' or 'fq' in file_name.split('.')[-2:]]
+	fastq_files = [file_name for file_name in files if file_name.endswith("fastq") or file_name.endswith("fq")]
 	
 	#See if they are paired or single. Seperate paired from single as well.
 	#This dict looks like: {'CGT2049_1.fq':	'CGT2049_2.fq'}
@@ -106,22 +104,27 @@ def process_input_directory(input_directory_path):
 		return True, ['single', fastq_files_dict]
 
 
-def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict):
+def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict, kmer_dict):
 	'''
 	We'll call 3 assembly tools, parallely
 	'''
 	parallel_manager = multiprocessing.Manager()
 	status_returned = parallel_manager.dict()
 
-	#Assembly flags, put these to default if you want to NOT RUN a particular tool.
+	print(fastq_files_dict)
+
+	#Assembly flags, put these to False if you want to NOT RUN a particular tool.
 	if_spades = False
-	if_velvet = True
+	if_velvet = False
 	if_abyss = False
+	if_masurca = False
+	if_unicycler = False
 
 	#Output directory paths.
 	output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades'
 	output_velvet_path = output_directory_path.rstrip('/') + '/' + 'velvet'
 	output_abyss_path = output_directory_path.rstrip('/') + '/' + 'abyss'
+	output_masurca_path = output_directory_path.rstrip('/') + '/' + 'masurca'
 
 	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
 	for fastq_file_forward, fastq_file_reverse in fastq_files_dict.items():
@@ -143,12 +146,33 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 
 			##########################################
 
+
+			##################MaSuRCA###############
+			if if_masurca:
+				#Create directory for MaSuRCA' results.			
+				if not os.path.exists(output_masurca_path):
+					os.mkdir(output_masurca_path)
+
+				else:
+					#print("Running masurca for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
+					masurca_output = masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_masurca_path, kmer_dict["masurca"]) 
+
+					#Check if MaSuRCA ran fine.
+					if masurca_output is not True or None:
+						print("MaSuRCA process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
+			##########################################
+
 			
-			##################Unicycler##################
+			##################Unicycler###############
+
+			##########################################
 
 
 
-			##################ABySS##################
+			##################ABySS###################
+
+			##########################################
+
 
 
 			##################Velvet##################
@@ -158,7 +182,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 					os.mkdir(output_velvet_path)
 				
 				#print("Running Velvet for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
-				velvet_output = velvet_runner(fastq_file_forward, fastq_file_reverse, velvet_kmer_count, input_directory_path, output_velvet_path)
+				velvet_output = velvet_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_velvet_path, kmer_dict['velvet'])
 
 				#Check if SPAdes ran fine.
 				if velvet_output is not True or None:
@@ -177,6 +201,15 @@ def main():
 	#Arguments added for an input-directory and output-directory.
 	parser.add_argument("-i", "--input-directory", help="Path to a directory that contains input fastq files.", required=True)
 	parser.add_argument("-o", "--output-directory", help="Path to a directory that will store the output files.", required=True)
+
+	#Argument for Kmers.
+	parser.add_argument("-ka", "--kmer-abyss", help="Kmer value for abyss.", required=False)
+	parser.add_argument("-ks", "--kmer-spades", help="Kmer value for spades.", required=False)
+	parser.add_argument("-km", "--kmer-masurca", help="Kmer value for MaSuRCA.", required=False)
+	parser.add_argument("-ku", "--kmer-unicycler", help="Kmer value for Unicycler.", required=False)
+	parser.add_argument("-kv", "--kmer-velvet", help="Kmer value for Velvet.", required=False)
+	#parser.add_argument("-ka", "--kmer-abyss", help="Kmer value for abyss.", required=False)
+	
 	parser.add_argument("-r", "--replace-output-files", help="Replace the output files that are already present. Currently not supported.", required=False, action="store_true")	
 
 	#Parsing the arguments.
@@ -185,6 +218,20 @@ def main():
 	input_directory_path_for_fastq_files = args['input_directory']
 	output_directory_path = args['output_directory']
 	replace_files_flag = args['replace_output_files']
+
+	#Parse Kmers.
+	kmer_abyss = args['kmer_abyss']
+	kmer_spades = args['kmer_spades']
+	kmer_masurca = args['kmer_masurca']
+	kmer_unicycler = args['kmer_unicycler']
+	kmer_velvet = args['kmer_velvet']
+
+	kmer_dict = {"abyss": kmer_abyss, "spades": kmer_spades, "masurca": kmer_masurca, "unicycler": kmer_unicycler, "velvet": kmer_velvet}
+
+	#Put default kmer values if no value is given.
+	for tool_name, kmer_value in kmer_dict.items():
+		if kmer_value is None:
+			kmer_dict[tool_name] = default_kmer_values[tool_name]
 
 	#Check if directories exist.
 	if not os.path.exists(input_directory_path_for_fastq_files) and	not os.path.exists(output_directory_path):
@@ -216,14 +263,17 @@ def main():
 
 	#################Passing data over to Genome Assembly Tools#################
 	print("Now running genome assembly tools.")
-	status_run_assemblies = run_assemblies(input_directory_path_for_fastq_files, output_directory_path, fastq_files_dict)
+	status_run_assemblies = run_assemblies(input_directory_path_for_fastq_files, output_directory_path, fastq_files_dict, kmer_dict)
 
+	if not status_run_assemblies:
+		print("Running assembly tools failed")
+		return False
 
 	print("Completed genome assembly tools.\n")
 	#################Post Assembly Quality Check#################
 	#Quast
 
-
+	return True
 	
 
 if __name__ == "__main__":
@@ -232,5 +282,5 @@ if __name__ == "__main__":
 	Always make sure that this script is working intact when called specifically.
 	'''
 	status = main()
-	print(status)
+	print("Final Status: {}".format(status))
 
