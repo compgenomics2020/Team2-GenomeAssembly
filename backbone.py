@@ -20,6 +20,7 @@ Output:	-	The final output is going to be Genome Assembly contigs for respective
 import argparse
 import multiprocessing
 import os
+import random
 import subprocess
 
 from spades_wrapper import spades_runner
@@ -34,9 +35,9 @@ from masurca_wrapper import masurca_runner
 genome_assembly_tools = {'in_path_variable': ['spades.py'], 'direct_paths': []}
 
 #Variable values as desired by other members.
-velvet_kmer_count = 91
+velvet_kmer_count = '91'
 
-default_kmer_values = {'abyss': None, 'spades': None, 'masurca': None, 'unicycler': None, 'velvet': 91}
+default_kmer_values = {'abyss': 'auto', 'spades': 'auto', 'masurca': 'auto', 'unicycler': 'auto', 'velvet': '91'}
 
 def check_tools():
 	'''
@@ -83,6 +84,8 @@ def process_input_directory(input_directory_path):
 	#See if they are paired or single. Seperate paired from single as well.
 	#This dict looks like: {'CGT2049_1.fq':	'CGT2049_2.fq'}
 
+	#Shuffle the read files.
+	random.shuffle(fastq_files)
 	fastq_files_dict = {}
 
 	#The for loop below creates the above dict.
@@ -104,32 +107,73 @@ def process_input_directory(input_directory_path):
 		return True, ['single', fastq_files_dict]
 
 
-def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict, kmer_dict):
+def get_manifest_files():
+	pre_trim_manifest_file_path = "tmp/pre_trim_manifest.tsv"
+	post_trim_manifest_file_path = "tmp/pre_trim_manifest.tsv"
+
+	pre_trim_manifest = {}
+	post_trim_manifest = {}
+
+	with open(pre_trim_manifest_file_path) as f:
+		raw = f.read()
+
+	rows = raw.rstrip('\n').split('\n')
+
+	for row in rows:
+		pre_trim_manifest[row.split('\t')[0]] = row.split('\t')[1]
+
+	#Repeating the same task for similar post trim file.
+	'''
+	with open(post_trim_manifest_file_path) as f:
+		raw = f.read()
+
+	rows = raw.rstrip('\n').split('\n')
+
+	for row in rows:
+		post_trim_manifest[row.split('\t')[0]] = row.split('\t')[1]	
+	'''
+	return pre_trim_manifest, None
+
+def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict, kmer_dict, pre_trim_manifest, post_trim_manifest):
 	'''
 	We'll call 3 assembly tools, parallely
 	'''
 	parallel_manager = multiprocessing.Manager()
 	status_returned = parallel_manager.dict()
 
-	print(fastq_files_dict)
+	#print(pre_trim_manifest)
 
 	#Assembly flags, put these to False if you want to NOT RUN a particular tool.
 	if_spades = False
 	if_velvet = False
 	if_abyss = False
-	if_masurca = False
+	if_masurca = True
 	if_unicycler = False
 
 	#Output directory paths.
-	output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades'
-	output_velvet_path = output_directory_path.rstrip('/') + '/' + 'velvet'
-	output_abyss_path = output_directory_path.rstrip('/') + '/' + 'abyss'
-	output_masurca_path = output_directory_path.rstrip('/') + '/' + 'masurca'
+	output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades' + '/' + kmer_dict['spades']
+	output_velvet_path = output_directory_path.rstrip('/') + '/' + 'velvet' + '/' + kmer_dict['velvet']
+	output_abyss_path = output_directory_path.rstrip('/') + '/' + 'abyss' + '/' + kmer_dict['abyss']
+	output_masurca_path = output_directory_path.rstrip('/') + '/' + 'masurca' + '/' + kmer_dict['masurca']
+
+	sub_sample = 5
+	sub_sample_counter = 0
 
 	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
 	for fastq_file_forward, fastq_file_reverse in fastq_files_dict.items():
 		#Check if foward has an _1 as a suffix.
+		if sub_sample_counter > 6:
+			break
 		if '_1' in fastq_file_forward:
+
+			#Following is a sampling functionality to run assemblies on smaller datasets for testing purposes.
+			selector = '150'
+			if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
+				sub_sample_counter+=1
+				#print(pre_trim_manifest[fastq_file_forward.split('.')[0]])
+
+			################Sampling Ends###############
+
 			##################SPAdes##################
 			if if_spades:
 				#Create directory for SPAdes' results.			
@@ -138,7 +182,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 
 				else:
 					#print("Running SPAdes for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
-					spades_output = spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_spades_path) 
+					spades_output = spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_spades_path, kmer_dict['spades']) 
 
 					#Check if SPAdes ran fine.
 					if spades_output is not True or None:
@@ -154,6 +198,13 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 					os.mkdir(output_masurca_path)
 
 				else:
+					#Get mean and sd of fastq files.
+					forward_read_length = pre_trim_manifest[fastq_file_forward.split('.')[0]]
+					reverse_read_length = pre_trim_manifest[fastq_file_reverse.split('.')[0]]
+
+					mean_length = round((int(forward_read_length) + int(reverse_read_length))/2)
+					standard_deviation = round(mean_length * 0.15)
+
 					#print("Running masurca for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
 					masurca_output = masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_masurca_path, kmer_dict["masurca"]) 
 
@@ -219,7 +270,9 @@ def main():
 	output_directory_path = args['output_directory']
 	replace_files_flag = args['replace_output_files']
 
-	#Parse Kmers.
+	#Parse Kmers for assembly tools.
+	#Most of our tools run on a Debuign graph based methods.
+	#They need kmer values.
 	kmer_abyss = args['kmer_abyss']
 	kmer_spades = args['kmer_spades']
 	kmer_masurca = args['kmer_masurca']
@@ -233,6 +286,10 @@ def main():
 		if kmer_value is None:
 			kmer_dict[tool_name] = default_kmer_values[tool_name]
 
+	###########################################Parsing Documents Ends#############################################
+	##############################################################################################################
+
+
 	#Check if directories exist.
 	if not os.path.exists(input_directory_path_for_fastq_files) and	not os.path.exists(output_directory_path):
 		return False, "Input and Output directories do not exist."
@@ -245,7 +302,11 @@ def main():
 	if not status_check_tools:
 		return False, "Tools asked for by the Genome Assembly weren't present on the system."
 
+	#########################################Check Directories Ends###############################################
+	##############################################################################################################
+
 	#Checks completed. Parse through input directories to see how fastq files are doing.
+	#Get information of input files.
 	status_process_input_directory, return_output_process_input_directory = process_input_directory(input_directory_path_for_fastq_files)
 
 	if not status_process_input_directory:
@@ -253,6 +314,17 @@ def main():
 
 	fastq_files_dict = return_output_process_input_directory[1]
 	
+	#Read Manifest file. Manifest file has information of pre-trim and post-trim files.
+	#Don't change the names of manifest files. This code expects them to be in tmp.
+
+	#Reading manifest files.
+		
+	pre_trim_manifest, post_trim_manifest = get_manifest_files()
+
+	#######################################Reading Manifest files Ends############################################
+	##############################################################################################################
+
+
 	print("Found {} file pairs in the input directory.\n".format(len(fastq_files_dict)))
 	#################Quality Checks#################
 	print("Started pre-assembly quality check.")
@@ -263,7 +335,7 @@ def main():
 
 	#################Passing data over to Genome Assembly Tools#################
 	print("Now running genome assembly tools.")
-	status_run_assemblies = run_assemblies(input_directory_path_for_fastq_files, output_directory_path, fastq_files_dict, kmer_dict)
+	status_run_assemblies = run_assemblies(input_directory_path_for_fastq_files, output_directory_path, fastq_files_dict, kmer_dict, pre_trim_manifest, post_trim_manifest)
 
 	if not status_run_assemblies:
 		print("Running assembly tools failed")
