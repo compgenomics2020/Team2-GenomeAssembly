@@ -157,12 +157,12 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 	output_masurca_path = output_directory_path.rstrip('/') + '/' + 'masurca' + '/' + kmer_dict['masurca']
 
 	sub_sample = 5
-	sub_sample_counter = 0
+	sub_sample_counter = 1
 
 	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
 	for fastq_file_forward, fastq_file_reverse in fastq_files_dict.items():
 		#Check if foward has an _1 as a suffix.
-		if sub_sample_counter > 6:
+		if sub_sample_counter > sub_sample:
 			break
 		if '_1' in fastq_file_forward:
 
