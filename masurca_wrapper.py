@@ -48,11 +48,11 @@ def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path,
 		pwd = os.getcwd()
 		
 		#Changing working directory to output.
-		os.chdir("/".join(os.path.abspath(fastq_file_forward_path).split('/')[:-1]))
+		os.chdir(output_subdir_path.rstrip('/') + '/')
 
 		#Running assembly.
-		masurca_output = subprocess.check_output([output_subdir_path.rstrip('/') + '/' + "./assembly.sh"])
-		
+		masurca_output = subprocess.check_output(["./assembly.sh"])
+		#print(os.listdir())
 		#Switching the directory back.
 		os.chdir(pwd)
 		
