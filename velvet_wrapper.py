@@ -3,7 +3,7 @@ import subprocess
 import os
 
 
-def velvet_runner(fastq_file_forward, fastq_file_reverse, kmer, input_directory_path, output_directory_path):
+def velvet_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_directory_path, kmer):
 	'''
 	This function has been written by Shuting Lin.
 
