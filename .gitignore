@@ -1,4 +1,5 @@
 data/*
+trimmed_data/*
 output/*
 tmp/*
 __pycache__/*

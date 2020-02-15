@@ -19,7 +19,7 @@ def spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, 
 	#Execute SPAdes.
 	try:
 		print("Running spades for {} and {}".format(fastq_file_forward, fastq_file_reverse))
-		if kmer is None:
+		if kmer is "auto":
 			#SPAdes running in auto mode.
 			bash_output = subprocess.check_output(["spades.py", "-1", fastq_file_forward_path, "-2", fastq_file_reverse_path, "-o", output_subdir_path])
 		else:

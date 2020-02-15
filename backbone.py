@@ -167,11 +167,14 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 		if '_1' in fastq_file_forward:
 
 			#Following is a sampling functionality to run assemblies on smaller datasets for testing purposes.
-			selector = '150'
-			if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
-				sub_sample_counter+=1
-				#print(pre_trim_manifest[fastq_file_forward.split('.')[0]])
-			else:
+			selector = '250'
+			try:
+				if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
+					sub_sample_counter+=1
+					#print(pre_trim_manifest[fastq_file_forward.split('.')[0]])
+				else:
+					continue
+			except KeyError:
 				continue
 			################Sampling Ends###############
 
