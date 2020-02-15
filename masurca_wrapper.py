@@ -24,7 +24,8 @@ def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path,
 	#Create file paths.
 	fastq_file_forward_path = input_directory_path + fastq_file_forward
 	fastq_file_reverse_path = input_directory_path + fastq_file_reverse
-	print(fastq_file_forward_path, os.path.abspath(fastq_file_forward_path))
+	
+	#print(fastq_file_forward_path, os.path.abspath(fastq_file_forward_path))
 	#Creating a directory inside output directory.
 	output_subdir_name = fastq_file_forward.split('.')[0].split('_')[0]
 	output_subdir_path = output_directory_path.rstrip('/') + '/' + output_subdir_name 
@@ -41,8 +42,20 @@ def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path,
 		configuration_file_path = create_configuration_file(os.path.abspath(fastq_file_forward_path), os.path.abspath(fastq_file_reverse_path), output_subdir_path, kmer, mean_length, standard_deviation)
 			
 		bash_output = subprocess.check_output(["masurca",  configuration_file_path, "-o", output_subdir_path.rstrip('/') + '/' + "assembly.sh"])
-	
+		
+
+		#Present working directory.
+		pwd = os.getcwd()
+		
+		#Changing working directory to output.
+		os.chdir("/".join(os.path.abspath(fastq_file_forward_path).split('/')[:-1]))
+
+		#Running assembly.
 		masurca_output = subprocess.check_output([output_subdir_path.rstrip('/') + '/' + "./assembly.sh"])
+		
+		#Switching the directory back.
+		os.chdir(pwd)
+		
 	except subprocess.CalledProcessError:
 		print("MaSuRCA could not finish the assembly. Please chek the files.")
 		return False
