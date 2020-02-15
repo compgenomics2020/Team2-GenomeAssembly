@@ -39,6 +39,9 @@ velvet_kmer_count = '91'
 
 default_kmer_values = {'abyss': 'auto', 'spades': 'auto', 'masurca': 'auto', 'unicycler': 'auto', 'velvet': '91'}
 
+###########################Globals End############################
+
+
 def check_tools():
 	'''
 	This function checks if all the tools required for our pipeline to work.
@@ -108,6 +111,11 @@ def process_input_directory(input_directory_path):
 
 
 def get_manifest_files():
+	'''
+	Manifest files contain information of length of reads contained in fastq files given as 
+	input data.
+	It's a two cloumn file, with first as name and second as length of reads.
+	'''
 	pre_trim_manifest_file_path = "tmp/pre_trim_manifest.tsv"
 	post_trim_manifest_file_path = "tmp/pre_trim_manifest.tsv"
 
@@ -133,6 +141,20 @@ def get_manifest_files():
 		post_trim_manifest[row.split('\t')[0]] = row.split('\t')[1]	
 	'''
 	return pre_trim_manifest, None
+
+
+def check_already_done(fastq_file_forward, output_directory):
+	'''
+	This function looks in the output directory to see if the fastq file (pairs)
+	have already been processed.
+	'''
+	directories = os.listdir(output_directory)
+	if fastq_file_forward.split('.')[0].split('_')[0] in directories:
+		return True
+	else:
+		return False
+
+
 
 def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict, kmer_dict, pre_trim_manifest, post_trim_manifest):
 	'''
@@ -167,7 +189,9 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 		if '_1' in fastq_file_forward:
 
 			#Following is a sampling functionality to run assemblies on smaller datasets for testing purposes.
-			selector = '250'
+			#Selector helps pick file based on pre-trim length.
+
+			selector = '150'
 			try:
 				if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
 					sub_sample_counter+=1
@@ -178,20 +202,35 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 				continue
 			################Sampling Ends###############
 
+
+			##########################################
+			################Tools Start###############
+			##########################################
+
+
 			##################SPAdes##################
 			if if_spades:
 				#Create directory for SPAdes' results.			
 				if not os.path.exists(output_spades_path):
 					os.mkdir(output_spades_path)
 
+				#Check if the file has already been processed using SPAdes.
+				if check_already_done(fastq_file_forward, output_spades_path):
+					sub_sample_counter-=1
+					print("\nFiles {} & {} have already been processed by SPAdes.".format(fastq_file_forward, fastq_file_reverse))
+					print("If you want to process it again, please delete the directory: {} in directory: {}".format(fastq_file_forward.split('.')[0].split('_')[0], output_spades_path))
+					print("Skipping for now...\n")
+					continue
+
 				else:
 					#print("Running SPAdes for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
+					
 					spades_output = spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_spades_path, kmer_dict['spades']) 
 
 					#Check if SPAdes ran fine.
 					if spades_output is not True or None:
 						print("SPAdes process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
-
+						sub_sample_counter-=1
 			##########################################
 
 
@@ -200,6 +239,14 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 				#Create directory for MaSuRCA' results.			
 				if not os.path.exists(output_masurca_path):
 					os.mkdir(output_masurca_path)
+
+				#Check if the file has already been processed using MaSuRCA.
+				if check_already_done(fastq_file_forward, output_masurca_path):
+					sub_sample_counter-=1	
+					print("\nFiles {} & {} have already been processed by MaSuRCA.".format(fastq_file_forward, fastq_file_reverse))
+					print("If you want to process it again, please delete the directory: {} in directory: {}".format(fastq_file_forward.split('.')[0].split('_')[0], output_masurca_path))
+					print("Skipping for now...\n")
+					continue
 
 				else:
 					#Get mean and sd of fastq files.
@@ -244,6 +291,10 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 					print("Velvet process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
 
 			##########################################
+			##########################################
+			#################Tools END################
+			##########################################
+
 
 	return True
 

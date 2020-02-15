@@ -57,7 +57,8 @@ def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path,
 		os.chdir(pwd)
 		
 	except subprocess.CalledProcessError:
-		print("MaSuRCA could not finish the assembly. Please chek the files.")
+		os.chdir(pwd)
+		print("MaSuRCA could not finish the assembly. Please check the files.")
 		return False
 
 	print("Successfully ran MaSuRCA for {} and {}".format(fastq_file_forward, fastq_file_reverse))

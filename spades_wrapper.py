@@ -19,7 +19,7 @@ def spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, 
 	#Execute SPAdes.
 	try:
 		print("Running spades for {} and {}".format(fastq_file_forward, fastq_file_reverse))
-		if kmer is "auto":
+		if kmer == "auto":
 			#SPAdes running in auto mode.
 			bash_output = subprocess.check_output(["spades.py", "-1", fastq_file_forward_path, "-2", fastq_file_reverse_path, "-o", output_subdir_path])
 		else:
@@ -27,7 +27,7 @@ def spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, 
 			bash_output = subprocess.check_output(["spades.py", "-1", fastq_file_forward_path, "-2", fastq_file_reverse_path, "-k", kmer ,"-o", output_subdir_path])
 
 	except subprocess.CalledProcessError:
-		print("SPAdes could not finish the assembly. Please chek the files.")
+		print("SPAdes could not finish the assembly. Please check the files.")
 		return False
 
 	print("Successfully ran spades for {} and {}".format(fastq_file_forward, fastq_file_reverse))
