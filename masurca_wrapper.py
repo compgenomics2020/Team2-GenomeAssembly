@@ -3,11 +3,9 @@
 import subprocess
 import os
 
-def create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, output_subdir_path, kmer):
-	read_length_mean = 0
-	read_length_sd = 0
+def create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, output_subdir_path, kmer, mean_length, standard_deviation):
 	raw_text = "Data\n" 
-	raw_text += "PE= p1 " + str(read_length_mean) + " " + str(read_length_sd) + " " + fastq_file_forward_path + " " + fastq_file_reverse_path + "\n"
+	raw_text += "PE= p1 " + str(mean_length) + " " + str(standard_deviation) + " " + fastq_file_forward_path + " " + fastq_file_reverse_path + "\n"
 	raw_text += "END\nPARAMENTERS\n"
 	raw_text += "GRAPH_KMER_SIZE = " + kmer + "\n"
 	raw_text += "USE_LINKING_MATES = 1\nMEGA_READS_ONE_PASS=0\nCA_PARAMETERS =  cgwErrorRate=0.25\nCLOSE_GAPS=1\nNUM_THREADS = 16\nJF_SIZE = 200000000\nEND"
@@ -22,7 +20,7 @@ def create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, 
 	return masurca_config_script_path
 
 
-def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_directory_path, kmer):
+def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_directory_path, kmer, mean_length, standard_deviation):
 	#Create file paths.
 	fastq_file_forward_path = input_directory_path + fastq_file_forward
 	fastq_file_reverse_path = input_directory_path + fastq_file_reverse
@@ -37,10 +35,10 @@ def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path,
 
 	#Execute MaSuRCA.
 	try:
-		print("Running MaSuRCA for {} and {}".format(fastq_file_forward, fastq_file_reverse))
+		print("Running MaSuRCA for {} and {} with mean length: {}, and standard deviation: {}".format(fastq_file_forward, fastq_file_reverse, mean_length, standard_deviation))
 		
 		#Creating configuration file.
-		configuration_file_path = create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, output_subdir_path, kmer)
+		configuration_file_path = create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, output_subdir_path, kmer, mean_length, standard_deviation)
 		return	
 		bash_output = subprocess.check_output(["masurca",  configuration_file_path, "-o", output_subdir_path.rstrip('/') + '/' + "assembly.sh"])
 	

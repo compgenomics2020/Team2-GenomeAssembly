@@ -206,7 +206,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 					standard_deviation = round(mean_length * 0.15)
 
 					#print("Running masurca for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
-					masurca_output = masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_masurca_path, kmer_dict["masurca"]) 
+					masurca_output = masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_masurca_path, kmer_dict["masurca"], mean_length, standard_deviation) 
 
 					#Check if MaSuRCA ran fine.
 					if masurca_output is not True or None:
