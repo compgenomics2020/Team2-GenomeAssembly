@@ -14,7 +14,7 @@ def create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, 
 
 	masurca_config_script_path = output_subdir_path.rstrip('/') + '/' + "config.txt" 
 
-	print(masurca_config_script_path)
+	#print(masurca_config_script_path)
 
 	with open(masurca_config_script_path, 'w') as f:
 		f.write(raw_text)
@@ -41,7 +41,7 @@ def masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path,
 		
 		#Creating configuration file.
 		configuration_file_path = create_configuration_file(fastq_file_forward_path, fastq_file_reverse_path, output_subdir_path, kmer)
-
+		return	
 		bash_output = subprocess.check_output(["masurca",  configuration_file_path, "-o", output_subdir_path.rstrip('/') + '/' + "assembly.sh"])
 	
 		masurca_output = subprocess.check_output(["./assembly.sh"])
