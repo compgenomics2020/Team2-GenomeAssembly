@@ -171,7 +171,8 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 			if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
 				sub_sample_counter+=1
 				#print(pre_trim_manifest[fastq_file_forward.split('.')[0]])
-
+			else:
+				continue
 			################Sampling Ends###############
 
 			##################SPAdes##################
