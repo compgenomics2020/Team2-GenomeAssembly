@@ -64,11 +64,21 @@ def quast_runner(output_directory_path):
 		if not os.path.exists(output_dir_path):
 			os.mkdir(output_dir_path)
 
-	#############################Execute Quast#############################
 	for tool_name, files in all_output_files.items():
 		for file in files:
 			#Get directory path for quast file outputs.
-			print(file)
+			path_els = file.split('/')
+			path_els = path_els[::-1][1:]
+			file_path_for_quast = ""
+			for path_el in path_els:
+				if path_el == tool_name:
+					break
+				file_path_for_quast = path_el + "-" + file_path_for_quast
+
+			print(file_path_for_quast)
+
+			#######################################################################
+			#############################Execute Quast#############################
 			try:
 				#quast_output = subprocess.check_output([])
 				pass
