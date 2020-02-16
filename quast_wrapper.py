@@ -50,7 +50,7 @@ def quast_runner(output_directory_path):
 	all_output_files = get_files_by_tools(output_directory_path)
 	
 	#############################Directory Prechecks#######################
-	quast_output_path = output_directory_path.rstrip('\n') + '/' + "quast"
+	quast_output_path = output_directory_path.rstrip('/') + '/' + "quast"
 
 	#First check if quast directory is there.
 	if "quast" not in os.listdir(output_directory_path):
@@ -66,8 +66,15 @@ def quast_runner(output_directory_path):
 
 	#############################Execute Quast#############################
 	for tool_name, files in all_output_files.items():
-		print(tool_name)
-		print(output_dir_paths)
+		for file in files:
+			#Get directory path for quast file outputs.
+			print(file)
+			try:
+				#quast_output = subprocess.check_output([])
+				pass
+			except subprocess.CalledProcessError:
+				print("==========>Quast could not finish quality check for tool: {} & file: {}".format(tool_name, file))
+				continue
 
 
 
