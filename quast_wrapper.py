@@ -69,14 +69,17 @@ def quast_runner(output_directory_path):
 			#Get directory path for quast file outputs.
 			path_els = file.split('/')
 			path_els = path_els[::-1][1:]
-			file_path_for_quast = ""
+			tail_file_path_for_quast = ""
 			for path_el in path_els:
 				if path_el == tool_name:
 					break
-				file_path_for_quast = path_el + "-" + file_path_for_quast
+				tail_file_path_for_quast = path_el + "-" + tail_file_path_for_quast
+
+			#Minor fix.
+			file_path_for_quast = output_dir_path[tool_name].rstrip('/') + '/' + tail_file_path_for_quast.rstrip('-')
+
 
 			print(file_path_for_quast)
-
 			#######################################################################
 			#############################Execute Quast#############################
 			try:
