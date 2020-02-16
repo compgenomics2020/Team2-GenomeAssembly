@@ -3,3 +3,5 @@ trimmed_data/*
 output/*
 tmp/*
 __pycache__/*
+.DS_Store
+results*
