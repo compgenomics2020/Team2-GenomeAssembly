@@ -65,9 +65,10 @@ def quast_runner(output_directory_path):
 			os.mkdir(output_dir_path)
 
 	for tool_name, files in all_output_files.items():
-		for file in files:
+		print("Processing files for tool: {}".format(tool_name))
+		for input_file_path in files:
 			#Get directory path for quast file outputs.
-			path_els = file.split('/')
+			path_els = input_file_path.split('/')
 			path_els = path_els[::-1][1:]
 			tail_file_path_for_quast = ""
 			for path_el in path_els:
@@ -88,8 +89,9 @@ def quast_runner(output_directory_path):
 			#######################################################################
 			#############################Execute Quast#############################
 			try:
-				print(file_path_for_quast, file)
-				pass
+				print("Running Quast on: {}".format(input_file_path))
+				quast_output = subprocess.check_output(["quast", input_file_path, "-o", file_path_for_quast])
+				exit()
 			except subprocess.CalledProcessError:
 				print("==========>Quast could not finish quality check for tool: {} & file: {}".format(tool_name, file))
 				continue
