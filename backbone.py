@@ -26,13 +26,13 @@ import subprocess
 from spades_wrapper import spades_runner
 from velvet_wrapper import velvet_runner
 from masurca_wrapper import masurca_runner
-
+from quast_wrapper import quast_runner
 
 #############################Globals#############################
 
 #Please do not change or add keys in the following dictionary.
 #Please do not use direct_paths unless you have to.
-genome_assembly_tools = {'in_path_variable': ['spades.py'], 'direct_paths': []}
+genome_assembly_tools = {'in_path_variable': [], 'direct_paths': []}
 
 #Variable values as desired by other members.
 velvet_kmer_count = '91'
@@ -166,7 +166,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 	#print(pre_trim_manifest)
 
 	#Assembly flags, put these to False if you want to NOT RUN a particular tool.
-	if_spades = True
+	if_spades = False
 	if_velvet = False
 	if_abyss = False
 	if_masurca = False
@@ -398,7 +398,11 @@ def main():
 
 	print("Completed genome assembly tools.\n")
 	#################Post Assembly Quality Check#################
-	#Quast
+	
+	print("Starting with post assembly quality check tools.")
+	print("Starting Quast")
+
+	quast_output = quast_runner(output_directory_path)
 
 	return True
 	
