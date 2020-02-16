@@ -76,14 +76,19 @@ def quast_runner(output_directory_path):
 				tail_file_path_for_quast = path_el + "-" + tail_file_path_for_quast
 
 			#Minor fix.
-			file_path_for_quast = output_dir_path[tool_name].rstrip('/') + '/' + tail_file_path_for_quast.rstrip('-')
+			file_path_for_quast = output_dir_paths[tool_name].rstrip('/') + '/' + tail_file_path_for_quast.rstrip('-')
 
+			#Write the output files for later use.
+			with open('tmp/quast_outputs.txt', 'a') as f:
+				f.write(file_path_for_quast + "\n")
 
-			print(file_path_for_quast)
+			if not os.path.exists(file_path_for_quast):
+				os.mkdir(file_path_for_quast)
+
 			#######################################################################
 			#############################Execute Quast#############################
 			try:
-				#quast_output = subprocess.check_output([])
+				print(file_path_for_quast, file)
 				pass
 			except subprocess.CalledProcessError:
 				print("==========>Quast could not finish quality check for tool: {} & file: {}".format(tool_name, file))
