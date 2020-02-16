@@ -1,5 +1,5 @@
 # Team2-GenomeAssembly
-Gyuhyon Cha, Hanchen Wang, Kristine Lacek, Shivam Sharma, Shuting Lin
+Gyuhyon Cha, Hanchen Wang, Kristine Lacek, Rhiya Sharma, Shivam Sharma, Shuting Lin
 
 ## Pre-running installations
 
@@ -25,6 +25,8 @@ chmod a+x ./fastp
 **Edena v.3.131028** -- [Genomic Research Laboratory - University of Geneva Hospitals](www.genomic.ch/edena.php)
 
 **SPAdes v.3.5.0** -- [St. Petersburg Academic Univerity of the Russian Academy of Sciences](bioinf.spbau.ru/spades)
+
+**Unicycler v0.4.8** -- 
 
 **QUAST v.2.3** -- [St. Petersburg Academic Univerity of the Russian Academy of Sciences](bioinf.spbau.ru/quast)
 
@@ -54,6 +56,12 @@ _Generates hash of trimmed reads and invokes either SE or PE SPAdes de novo asse
 _Output is a directory containing the contig and scaffold files in FASTA format._
 
 **Usage:** module_SPAdes.py \</path/to/inputfiles/\> \</path/to/output directory/\>
+
+### module_Unicycler.py
+_Generates hash of trimmed reads and invokes either SE or PE SPAdes de novo assembly._
+_Output is a directory containing the contig and scaffold files in FASTA format._
+
+**Usage:** module_Unicycler.py \</path/to/inputfiles/\> \</path/to/output directory/\>
 
 ### module_Prinseq.py
 _User-friendly script to run prinseq with specified parameters._
