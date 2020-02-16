@@ -91,9 +91,9 @@ def quast_runner(output_directory_path):
 			try:
 				print("Running Quast on: {}".format(input_file_path))
 				quast_output = subprocess.check_output(["quast", input_file_path, "-o", file_path_for_quast])
-				exit()
+
 			except subprocess.CalledProcessError:
-				print("==========>Quast could not finish quality check for tool: {} & file: {}".format(tool_name, file))
+				print("==========>Quast could not finish quality check for tool: {} & file: {}".format(tool_name, input_file_path))
 				continue
 
 
