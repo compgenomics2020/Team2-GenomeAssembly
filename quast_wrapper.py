@@ -64,6 +64,12 @@ def quast_runner(output_directory_path):
 		if not os.path.exists(output_dir_path):
 			os.mkdir(output_dir_path)
 
+	#Get files that have already been processed.
+	with open('tmp/quast_outputs.txt') as f:
+		raw = f.read()
+
+	already_processed_files = raw.split('\n')
+
 	for tool_name, files in all_output_files.items():
 		print("Processing files for tool: {}".format(tool_name))
 		for input_file_path in files:
@@ -79,9 +85,9 @@ def quast_runner(output_directory_path):
 			#Minor fix.
 			file_path_for_quast = output_dir_paths[tool_name].rstrip('/') + '/' + tail_file_path_for_quast.rstrip('-')
 
-			#Write the output files for later use.
-			with open('tmp/quast_outputs.txt', 'a') as f:
-				f.write(file_path_for_quast + "\n")
+			#Check if file has already been processed.
+			if input_file_path in already_processed_files:
+				print("File: {} has already been processed by Quast, skipping...".format(input_file_path))
 
 			if not os.path.exists(file_path_for_quast):
 				os.mkdir(file_path_for_quast)
@@ -90,7 +96,12 @@ def quast_runner(output_directory_path):
 			#############################Execute Quast#############################
 			try:
 				print("Running Quast on: {}".format(input_file_path))
+				continue
 				quast_output = subprocess.check_output(["quast", input_file_path, "-o", file_path_for_quast])
+
+				#Write the output files for later use.
+				with open('tmp/quast_outputs.txt', 'a') as f:
+					f.write(file_path_for_quast + "\n")
 
 			except subprocess.CalledProcessError:
 				print("==========>Quast could not finish quality check for tool: {} & file: {}".format(tool_name, input_file_path))
