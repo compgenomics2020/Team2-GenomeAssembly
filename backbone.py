@@ -166,7 +166,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 	#print(pre_trim_manifest)
 
 	#Assembly flags, put these to False if you want to NOT RUN a particular tool.
-	if_spades = False
+	if_spades = True
 	if_velvet = False
 	if_abyss = False
 	if_masurca = False
@@ -178,7 +178,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 	output_abyss_path = output_directory_path.rstrip('/') + '/' + 'abyss' + '/' + kmer_dict['abyss']
 	output_masurca_path = output_directory_path.rstrip('/') + '/' + 'masurca' + '/' + kmer_dict['masurca']
 
-	sub_sample = 5
+	sub_sample = 120
 	sub_sample_counter = 1
 
 	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
@@ -402,7 +402,7 @@ def main():
 	print("Starting with post assembly quality check tools.")
 	print("Starting Quast")
 
-	quast_output = quast_runner(output_directory_path)
+	#quast_output = quast_runner(output_directory_path)
 
 	return True
 	

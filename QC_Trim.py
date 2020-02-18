@@ -24,25 +24,25 @@ def quality_control(file_directory):	#Function utlizing fastqc and fastp
 	for filename in os.listdir(file_directory):
 		myfile = file_directory + '/' + filename	#calls unzipped .fq files
 		if "html" not in filename:
-			listname = "./fastqc_output/" + filename[:-3] + "_fastqc.zip"
+			listname = "../genome_assembly/fastqc_output/" + filename[:-3] + "_fastqc.zip"
 			file_list.append(listname)
-		print("files beingp processed:" + filename)
-		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "./fastqc_output", "-t", "12", "--extract"])	#performs fastqc
+		print("files being processed:" + filename)
+		subprocess.call(["./FastQC/fastqc", myfile, "-j", "./jdk8u232-b09/bin/java", "-o", "../genome_assembly/fastqc_output", "-t", "12", "--extract"])	#performs fastqc
 	file_list_sort = sorted(file_list)
-	#print(file_list)
+	print(file_list)
 	for file in file_list_sort:
 		if "_fastqc.zip" in file:
-			subprocess.call(["unzip", file, "-d", "./unzipped_fastqc_files/"])	#unzips all generated files
-			with open("all_fastq_files_data.txt",'a') as myfi:
+			subprocess.call(["unzip", file, "-d", "../genome_assembly/unzipped_fastqc_files/"])	#unzips all generated files
+			with open("../genome_assembly/all_fastq_files_data.txt",'a') as myfi:
 				if "_1_" in file:
-					myfi.write("./unzipped_fastqc_files/" + file[16:-4] + "/fastqc_data.txt" + '\t') 	#creates a file with the names of all the new unzipped folders and path to fastqc_data.txt for them paired for forward and reverse reads
+					myfi.write("../genome_assembly/unzipped_fastqc_files" + file[32:-4] + "/fastqc_data.txt" + '\t') 	#creates a file with the names of all the new unzipped folders and path to fastqc_data.txt for them paired for forward and reverse reads
 				elif "_2_" in file:
-					myfi.write("./unzipped_fastqc_files/" + file[16:-4] + "/fastqc_data.txt" + '\n') 
-			with open("all_fastq_files_paired.txt",'a') as myfi:
+					myfi.write("../genome_assembly/unzipped_fastqc_files" + file[32:-4] + "/fastqc_data.txt" + '\n') 
+			with open("../genome_assembly/all_fastq_files_paired.txt",'a') as myfi:
 				if "_1_" in file:
-					myfi.write("./gunzipped_data/" + file[16:-11] + ".fq" + '\t') 	#creates a file with the names of all the original unzipped fastq filaes paired for forward and reverse reads
+					myfi.write("../genome_assembly/gunzipped_data" + file[32:-11] + ".fq" + '\t') 	#creates a file with the names of all the original unzipped fastq filaes paired for forward and reverse reads
 				elif "_2_" in file:
-					myfi.write("./gunzipped_data/" + file[16:-11] + ".fq" + '\n') 
+					myfi.write("../genome_assembly/gunzipped_data" + file[32:-11] + ".fq" + '\n') 
 
 			i += 1
 forward_score_list = []
@@ -74,7 +74,7 @@ def find_cropping_and_trim(file, qual="30"):	#iterates through each QC data repo
 						#print(myline[0])
 						if "-" in myline[0]:
 
-							if int((myline[0].split("-")[1])) > length:		#Ensures that if a range is given, only highest number is chosen
+							if int((myline[0].split("-")[1])) > int(length):		#Ensures that if a range is given, only highest number is chosen
 								length = int((myline[0].split("-")[1]))
 						else:
 							length = myline[0]
@@ -108,18 +108,18 @@ def find_cropping_and_trim(file, qual="30"):	#iterates through each QC data repo
 								reverse_score_list.append(crop_command)
 
 # Now, original fastq files are called in pairs to be trimmed by fastp
-			with open("all_fastq_files_paired.txt", 'r') as trimming_input:
+			with open("../genome_assembly/all_fastq_files_paired.txt", 'r') as trimming_input:
 				head_command = "0"
 				tail_command = "0"
 				trimming_pair = trimming_input.readlines()[sequence_pair].split()
 				fastqc_file_1 = trimming_pair[0]
 				fastqc_file_2 = trimming_pair[1]
-				output_name = './final_trim_output/' + fastqc_file_1[16:-5] + "output_1.fastq"
-				output_name_2 = './final_trim_output/' + fastqc_file_2[16:-5] + "output_2.fastq"
+				output_name = './output/final_trim_output' + fastqc_file_1[33:-5] + "output_1.fastq"
+				output_name_2 = './output/final_trim_output' + fastqc_file_2[33:-5] + "output_2.fastq"
 				fail_file = output_name + "fail"
 				merged_file = output_name + "merge"
-				output_name_json = './final_trim_output/' + fastqc_file_1[16:-5] + "fastp.json"
-				output_name_html = './final_trim_output/' + fastqc_file_1[16:-5] + ".html"
+				output_name_json = './final_trim_output' + fastqc_file_1[33:-5] + "fastp.json"
+				output_name_html = './final_trim_output' + fastqc_file_1[33:-5] + ".html"
 				quality = str(qual)
 				halfway_point = int(length) / 2
 				#print(halfway_point)
@@ -131,10 +131,10 @@ def find_cropping_and_trim(file, qual="30"):	#iterates through each QC data repo
 						tail_command = i
 				#print(forward_score_list, reverse_score_list)
 				#print("headcrop position: " + head_command + " tail crop position: " + tail_command)
-				subprocess.call(["./fastp", "--in1", fastqc_file_1, "--in2", fastqc_file_2, "--stdout", "--out1", output_name, "--out2", output_name_2, "--failed_out", fail_file, "-m", "--merged_out", merged_file, "-l", "75", "-q", quality, "-e", "28", "-j", output_name_json, "-h", output_name_html, '-w', '5', '-f', head_command, "-t", tail_command, "-5", "-3", "-M", "28"])
-				subprocess.call(["rm", "all_fastq_files_data.txt"])
-				subprocess.call(["rm", "all_fastq_files_paired.txt"])
+				subprocess.call(["../genome_assembly/fastp", "--in1", fastqc_file_1, "--in2", fastqc_file_2, "--stdout", "--out1", output_name, "--out2", output_name_2, "--failed_out", fail_file, "-m", "--merged_out", merged_file, "-l", "75", "-q", quality, "-e", "28", "-j", output_name_json, "-h", output_name_html, '-w', '5', '-f', head_command, "-t", tail_command, "-5", "-3", "-M", "28"])
+				#subprocess.call(["rm", "../genome_assembly/all_fastq_files_data.txt"])
+				#subprocess.call(["rm", "../genome_assembly/all_fastq_files_paired.txt"])
 				
 
 quality_control(file_directory)
-find_cropping_and_trim("all_fastq_files_data.txt")	
+find_cropping_and_trim("../genome_assembly/all_fastq_files_data.txt")	
