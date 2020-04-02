@@ -45,7 +45,7 @@ forward_file.sort()
 reverse_file.sort()
 
 k=33
-# 21 55 77 33
+# 21 55 77 33 (k-mer values)
 for i in range(len(forward_file)):
         abyss_output = abyss_runner(forward_file, reverse_file, inp, outp, k)
 
