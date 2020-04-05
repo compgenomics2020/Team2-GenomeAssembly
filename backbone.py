@@ -27,6 +27,7 @@ from spades_wrapper import spades_runner
 from velvet_wrapper import velvet_runner
 from masurca_wrapper import masurca_runner
 from quast_wrapper import quast_runner
+from plasmids_spades_wrapper import plasmid_spades_runner
 
 #############################Globals#############################
 
@@ -167,42 +168,17 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 
 	#Assembly flags, put these to False if you want to NOT RUN a particular tool.
 	if_spades = False
-	if_velvet = False
-	if_abyss = False
-	if_masurca = True
-	if_unicycler = False
+	if_plasmid = True
 
 	#Output directory paths.
 	output_spades_path = output_directory_path.rstrip('/') + '/' + 'spades' + '/' + kmer_dict['spades']
-	output_velvet_path = output_directory_path.rstrip('/') + '/' + 'velvet' + '/' + kmer_dict['velvet']
-	output_abyss_path = output_directory_path.rstrip('/') + '/' + 'abyss' + '/' + kmer_dict['abyss']
-	output_masurca_path = output_directory_path.rstrip('/') + '/' + 'masurca' + '/' + kmer_dict['masurca']
+	output_plasmid_spades_path = output_directory_path.rstrip('/') + '/' + 'plasmid_spades' + '/' 
 
-	sub_sample = 120
-	sub_sample_counter = 1
 
 	#Refer: https://stackoverflow.com/questions/10415028/how-can-i-recover-the-return-value-of-a-function-passed-to-multiprocessing-proce
 	for fastq_file_forward, fastq_file_reverse in fastq_files_dict.items():
 		#Check if foward has an _1 as a suffix.
-		if sub_sample_counter > sub_sample:
-			break
 		if '_1' in fastq_file_forward:
-
-			#Following is a sampling functionality to run assemblies on smaller datasets for testing purposes.
-			#Selector helps pick file based on pre-trim length.
-
-			selector = '250'
-			try:
-				if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
-					sub_sample_counter+=1
-					#print(pre_trim_manifest[fastq_file_forward.split('.')[0]])
-				else:
-					continue
-			except KeyError:
-				continue
-			################Sampling Ends###############
-
-
 			##########################################
 			################Tools Start###############
 			##########################################
@@ -216,7 +192,6 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 
 				#Check if the file has already been processed using SPAdes.
 				if check_already_done(fastq_file_forward, output_spades_path):
-					sub_sample_counter-=1
 					print("\nFiles {} & {} have already been processed by SPAdes.".format(fastq_file_forward, fastq_file_reverse))
 					print("If you want to process it again, please delete the directory: {} in directory: {}".format(fastq_file_forward.split('.')[0].split('_')[0], output_spades_path))
 					print("Skipping for now...\n")
@@ -230,74 +205,40 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 					#Check if SPAdes ran fine.
 					if spades_output is not True or None:
 						print("SPAdes process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
-						sub_sample_counter-=1
 			##########################################
 
 
-			##################MaSuRCA###############
-			if if_masurca:
-				#Create directory for MaSuRCA' results.			
-				if not os.path.exists(output_masurca_path):
-					os.mkdir(output_masurca_path)
+			##############Plasmids SPAdes#############
+			if if_plasmid:
+				print(fastq_file_forward, fastq_file_reverse)
+				continue
+				#Create directory for SPAdes' results.			
+				if not os.path.exists(output_plasmid_spades_path):
+					os.mkdir(output_plasmid_spades_path)
 
-				#Check if the file has already been processed using MaSuRCA.
-				if check_already_done(fastq_file_forward, output_masurca_path):
-					sub_sample_counter-=1	
-					print("\nFiles {} & {} have already been processed by MaSuRCA.".format(fastq_file_forward, fastq_file_reverse))
-					print("If you want to process it again, please delete the directory: {} in directory: {}".format(fastq_file_forward.split('.')[0].split('_')[0], output_masurca_path))
+				#Check if the file has already been processed using SPAdes.
+				if check_already_done(fastq_file_forward, output_plasmid_spades_path):
+					print("\nFiles {} & {} have already been processed by plasmid-SPAdes.".format(fastq_file_forward, fastq_file_reverse))
+					print("If you want to process it again, please delete the directory: {} in directory: {}".format(fastq_file_forward.split('.')[0].split('_')[0], output_plasmid_spades_path))
 					print("Skipping for now...\n")
 					continue
 
 				else:
-					#Get mean and sd of fastq files.
-					forward_read_length = pre_trim_manifest[fastq_file_forward.split('.')[0]]
-					reverse_read_length = pre_trim_manifest[fastq_file_reverse.split('.')[0]]
+					#print("Running SPAdes for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
+					
+					plasmid_spades_output = plasmid_spades_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_plasmid_spades_path, "auto") 
 
-					mean_length = round((int(forward_read_length) + int(reverse_read_length))/2)
-					standard_deviation = round(mean_length * 0.15)
-
-					#print("Running masurca for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
-					masurca_output = masurca_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_masurca_path, kmer_dict["masurca"], mean_length, standard_deviation) 
-
-					#Check if MaSuRCA ran fine.
-					if masurca_output is not True or None:
-						print("MaSuRCA process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
-			##########################################
-
-			
-			##################Unicycler###############
-
+					#Check if SPAdes ran fine.
+					if plasmid_spades_output is not True or None:
+						print("plasmid-SPAdes process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
 			##########################################
 
 
-
-			##################ABySS###################
-
-			##########################################
-
-
-
-			##################Velvet##################
-			if if_velvet:
-				#Create directory for Velvets' results.			
-				if not os.path.exists(output_velvet_path):
-					os.mkdir(output_velvet_path)
-				
-				#print("Running Velvet for {} & {}.".format(fastq_file_forward, fastq_file_reverse))
-				velvet_output = velvet_runner(fastq_file_forward, fastq_file_reverse, input_directory_path, output_velvet_path, kmer_dict['velvet'])
-
-				#Check if SPAdes ran fine.
-				if velvet_output is not True or None:
-					print("Velvet process failed for reads: {} and {}".format(fastq_file_forward, fastq_file_reverse))
-
-			##########################################
 			##########################################
 			#################Tools END################
 			##########################################
-
-
+			
 	return True
-
 
 
 

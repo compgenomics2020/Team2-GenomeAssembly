@@ -69,7 +69,7 @@ def quast_runner(output_directory_path):
 		raw = f.read()
 
 	already_processed_files = raw.split('\n')
-	print(already_processed_files)	
+	#print(already_processed_files)	
 
 	for tool_name, files in all_output_files.items():
 		print("Processing files for tool: {}".format(tool_name))
