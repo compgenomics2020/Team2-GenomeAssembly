@@ -166,10 +166,10 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 	#print(pre_trim_manifest)
 
 	#Assembly flags, put these to False if you want to NOT RUN a particular tool.
-	if_spades = True
+	if_spades = False
 	if_velvet = False
 	if_abyss = False
-	if_masurca = False
+	if_masurca = True
 	if_unicycler = False
 
 	#Output directory paths.
@@ -191,7 +191,7 @@ def run_assemblies(input_directory_path, output_directory_path, fastq_files_dict
 			#Following is a sampling functionality to run assemblies on smaller datasets for testing purposes.
 			#Selector helps pick file based on pre-trim length.
 
-			selector = '150'
+			selector = '250'
 			try:
 				if pre_trim_manifest[fastq_file_forward.split('.')[0]] == selector:
 					sub_sample_counter+=1
